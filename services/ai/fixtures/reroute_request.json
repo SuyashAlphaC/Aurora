@@ -1,0 +1,25 @@
+{
+  "fromShelterId": "shelter-b",
+  "fromLat": 19.0820,
+  "fromLng": 72.8850,
+  "candidates": [
+    {
+      "id": "shelter-a",
+      "capacity": 150,
+      "currentOccupancy": 130,
+      "lat": 19.0760,
+      "lng": 72.8777,
+      "environment": { "airQualityIndex": 90 },
+      "network": { "uplinkStatus": "UP", "latencyMs": 50 }
+    },
+    {
+      "id": "shelter-d",
+      "capacity": 180,
+      "currentOccupancy": 72,
+      "lat": 19.0780,
+      "lng": 72.8920,
+      "environment": { "airQualityIndex": 45 },
+      "network": { "uplinkStatus": "UP", "latencyMs": 38 }
+    }
+  ]
+}

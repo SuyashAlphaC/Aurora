@@ -1,0 +1,7 @@
+# Replace @member1-github @member2-github @member3-github with real GitHub usernames
+
+/services/ai/                    @member1-github
+/services/api/                   @member2-github
+/apps/dashboard/                 @member3-github
+/docs/API_CONTRACT.md            @member1-github @member2-github @member3-github
+docker-compose.yml               @member2-github

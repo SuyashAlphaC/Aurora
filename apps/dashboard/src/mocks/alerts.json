@@ -1,0 +1,24 @@
+{
+  "alerts": [
+    {
+      "id": "alert-mock-001",
+      "shelterId": "shelter-b",
+      "severity": "CRITICAL",
+      "type": "CAPACITY_CRITICAL",
+      "message": "Community Hall Sector 12 at 92% capacity. Air quality degrading.",
+      "recommendation": {
+        "toShelterId": "shelter-d",
+        "toShelterName": "St. Mary's Church Hall",
+        "reasons": [
+          "40% occupancy (72/180)",
+          "Good air quality (AQI 45)",
+          "Healthy uplink (38ms)",
+          "Nearest viable shelter (2.1 km)"
+        ],
+        "etaMinutes": 18
+      },
+      "status": "OPEN",
+      "createdAt": "2026-07-02T14:32:00Z"
+    }
+  ]
+}

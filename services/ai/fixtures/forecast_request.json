@@ -1,0 +1,10 @@
+{
+  "shelterId": "shelter-b",
+  "capacity": 200,
+  "history": [
+    { "timestamp": "2026-07-02T14:00:00Z", "occupancy": 120 },
+    { "timestamp": "2026-07-02T14:10:00Z", "occupancy": 145 },
+    { "timestamp": "2026-07-02T14:20:00Z", "occupancy": 168 },
+    { "timestamp": "2026-07-02T14:30:00Z", "occupancy": 182 }
+  ]
+}

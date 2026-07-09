@@ -1,0 +1,39 @@
+# Owner: Member 2 — full stack (SQLite-based API)
+
+services:
+  ai:
+    build: ./services/ai
+    ports:
+      - "8001:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ai/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  api:
+    build: ./services/api
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./services/api/.env
+    environment:
+      AI_SERVICE_URL: http://ai:8001
+      AI_SERVICE_MOCK: "false"
+      DB_PATH: /app/data/aurora.db
+      AUTH_DISABLED: "false"
+    volumes:
+      - api-data:/app/data
+    depends_on:
+      ai:
+        condition: service_healthy
+
+  dashboard:
+    build: ./apps/dashboard
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  api-data:

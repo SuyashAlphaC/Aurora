@@ -1,0 +1,56 @@
+{
+  "shelters": [
+    {
+      "id": "shelter-a",
+      "name": "Riverside Primary School",
+      "lat": 19.076,
+      "lng": 72.8777,
+      "capacity": 150,
+      "currentOccupancy": 90,
+      "occupancyPct": 60,
+      "state": "HEALTHY",
+      "environment": { "airQualityIndex": 65, "temperatureC": 29, "humidityPct": 70, "waterLeak": false },
+      "network": { "uplinkStatus": "UP", "latencyMs": 50, "lossPct": 0.1 },
+      "updatedAt": "2026-07-02T14:00:00Z"
+    },
+    {
+      "id": "shelter-b",
+      "name": "Community Hall Sector 12",
+      "lat": 19.082,
+      "lng": 72.885,
+      "capacity": 200,
+      "currentOccupancy": 185,
+      "occupancyPct": 92,
+      "state": "CRITICAL",
+      "environment": { "airQualityIndex": 156, "temperatureC": 31.2, "humidityPct": 78, "waterLeak": false },
+      "network": { "uplinkStatus": "UP", "latencyMs": 42, "lossPct": 0.1 },
+      "updatedAt": "2026-07-02T14:32:00Z"
+    },
+    {
+      "id": "shelter-c",
+      "name": "Sports Complex North",
+      "lat": 19.09,
+      "lng": 72.87,
+      "capacity": 300,
+      "currentOccupancy": 150,
+      "occupancyPct": 50,
+      "state": "HEALTHY",
+      "environment": { "airQualityIndex": 55, "temperatureC": 28, "humidityPct": 68, "waterLeak": false },
+      "network": { "uplinkStatus": "UP", "latencyMs": 40, "lossPct": 0.1 },
+      "updatedAt": "2026-07-02T14:00:00Z"
+    },
+    {
+      "id": "shelter-d",
+      "name": "St. Mary's Church Hall",
+      "lat": 19.078,
+      "lng": 72.892,
+      "capacity": 180,
+      "currentOccupancy": 72,
+      "occupancyPct": 40,
+      "state": "HEALTHY",
+      "environment": { "airQualityIndex": 45, "temperatureC": 28, "humidityPct": 65, "waterLeak": false },
+      "network": { "uplinkStatus": "UP", "latencyMs": 38, "lossPct": 0.1 },
+      "updatedAt": "2026-07-02T14:00:00Z"
+    }
+  ]
+}

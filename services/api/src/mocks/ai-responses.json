@@ -1,0 +1,24 @@
+{
+  "forecast": {
+    "shelterId": "shelter-b",
+    "minutesToCapacity": 18,
+    "predictedOccupancyAt60Min": 220,
+    "confidence": 0.87,
+    "explanation": "Occupancy rising ~3.7/min based on last 30 min trend."
+  },
+  "reroute": {
+    "recommendedShelterId": "shelter-d",
+    "ranked": [
+      {
+        "shelterId": "shelter-d",
+        "score": 0.92,
+        "reasons": [
+          "40% occupancy (72/180)",
+          "Good air quality (AQI 45)",
+          "Healthy uplink (38ms)",
+          "Nearest viable shelter (2.1 km)"
+        ]
+      }
+    ]
+  }
+}
