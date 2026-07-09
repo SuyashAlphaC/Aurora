@@ -8,7 +8,7 @@ interface DuoApiResponse {
     result?: string;
     status?: string;
     status_msg?: string;
-    devices?: unknown[];
+    devices?: Array<{ device?: string; capabilities?: string[] }>;
   };
   message?: string;
 }
@@ -25,7 +25,12 @@ function canonicalize(params: Record<string, string>): string {
   return keys.map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`).join("&");
 }
 
-async function duoRequest(method: string, path: string, params: Record<string, string> = {}): Promise<DuoApiResponse> {
+async function duoRequest(
+  method: string,
+  path: string,
+  params: Record<string, string> = {},
+  timeoutMs = 15_000
+): Promise<DuoApiResponse> {
   const date = new Date().toUTCString();
   const sig = duoSign(method, path, params, date);
   const auth = Buffer.from(`${config.duo.clientId}:${sig}`).toString("base64");
@@ -49,12 +54,14 @@ async function duoRequest(method: string, path: string, params: Record<string, s
       Accept: "application/json",
     },
     body,
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
 
   const data = (await res.json()) as DuoApiResponse;
   if (!res.ok || data.stat !== "OK") {
-    throw new Error(data.message ?? `Duo API error ${res.status}`);
+    const code = (data as { code?: number }).code;
+    const detail = data.message ?? `Duo API error ${res.status}`;
+    throw new Error(code ? `${detail} (code ${code})` : detail);
   }
   return data;
 }
@@ -82,13 +89,63 @@ export async function duoVerifyPasscode(username: string, passcode: string): Pro
   return data.response?.result === "allow";
 }
 
-export async function duoVerifyPush(username: string): Promise<boolean> {
-  const data = await duoRequest("POST", "/auth/v2/auth", {
-    username,
-    factor: "push",
-    async: "0",
-  });
-  return data.response?.result === "allow";
+export interface DuoPushResult {
+  allowed: boolean;
+  status?: string;
+  statusMsg?: string;
+}
+
+function requirePushDevice(preauth: DuoApiResponse): string {
+  const devices = preauth.response?.devices ?? [];
+  const pushDevice = devices.find((d) => d.capabilities?.includes("push"));
+  if (!pushDevice?.device) {
+    const summary =
+      devices.length === 0
+        ? "no devices on file"
+        : devices
+            .map((d) => d.capabilities?.join("+") ?? "unknown")
+            .join(", ");
+    throw new Error(
+      `No Duo Push device for this user. In Duo Admin: Users → coordinator → Activate Duo Mobile. Found: ${summary}`
+    );
+  }
+  return pushDevice.device;
+}
+
+export async function duoVerifyPush(username: string): Promise<DuoPushResult> {
+  const preauth = await duoPreauth(username);
+  const preauthResult = preauth.response?.result;
+
+  if (preauthResult === "allow") return { allowed: true, status: "allow" };
+  if (preauthResult === "deny") {
+    return {
+      allowed: false,
+      status: "deny",
+      statusMsg: preauth.response?.status_msg ?? "User denied by Duo policy",
+    };
+  }
+  if (preauthResult === "enroll") {
+    throw new Error("User must enroll a Duo device (activate Duo Mobile on the phone)");
+  }
+
+  const device = requirePushDevice(preauth);
+  const data = await duoRequest(
+    "POST",
+    "/auth/v2/auth",
+    {
+      username,
+      factor: "push",
+      device,
+      async: "0",
+    },
+    75_000
+  );
+
+  return {
+    allowed: data.response?.result === "allow",
+    status: data.response?.status,
+    statusMsg: data.response?.status_msg,
+  };
 }
 
 /** Issue a simple signed session token for coordinator API access */

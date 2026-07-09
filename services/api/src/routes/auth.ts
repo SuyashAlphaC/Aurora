@@ -36,9 +36,12 @@ authRouter.post("/login", async (req, res) => {
 
   try {
     if (factor === "push") {
-      const allowed = await duoVerifyPush(username);
-      if (!allowed) {
-        res.status(401).json({ error: "Duo push denied" });
+      const pushResult = await duoVerifyPush(username);
+      if (!pushResult.allowed) {
+        res.status(401).json({
+          error: "Duo push denied",
+          details: pushResult.statusMsg ?? pushResult.status ?? "No approval received",
+        });
         return;
       }
     } else if (passcode) {

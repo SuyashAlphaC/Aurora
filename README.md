@@ -93,7 +93,7 @@ Aurora/
 | Secure | Duo Auth API | `services/api/src/cisco/duo.ts` |
 | Intelligence | Explainable AI | `services/ai/app/` |
 
-See [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) to activate live credentials.
+See [docs/WEBEX_DUO_QUICKSTART.md](docs/WEBEX_DUO_QUICKSTART.md) for free Duo + Webex setup (~25 min), or [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) for all integrations.
 
 ## Documentation
 
@@ -104,6 +104,7 @@ See [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) to activate live credentials.
 | [docs/PITCH_DECK.md](docs/PITCH_DECK.md) | 3-slide pitch + script |
 | [docs/SUBMISSION.md](docs/SUBMISSION.md) | Submission checklist |
 | [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) | Credential setup guide |
+| [docs/WEBEX_DUO_QUICKSTART.md](docs/WEBEX_DUO_QUICKSTART.md) | Free Duo + Webex in ~25 min |
 
 ## Team
 
