@@ -21,7 +21,8 @@ export const config = {
   meraki: {
     apiKey: process.env.MERAKI_API_KEY || "",
     orgId: process.env.MERAKI_ORG_ID || "",
-    baseUrl: "https://api.meraki.com/api/v1",
+    /** Global: api.meraki.com | India: api.meraki.in | Canada: api.meraki.ca */
+    baseUrl: process.env.MERAKI_BASE_URL || "https://api.meraki.com/api/v1",
     pollIntervalMs: Number(process.env.MERAKI_POLL_MS) || 60_000,
   },
 

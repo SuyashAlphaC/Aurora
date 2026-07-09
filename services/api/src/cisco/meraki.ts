@@ -22,7 +22,7 @@ async function merakiFetch<T>(path: string): Promise<T> {
   const url = `${config.meraki.baseUrl}${path}`;
   const res = await fetch(url, {
     headers: {
-      "X-Cisco-Meraki-API-Key": config.meraki.apiKey,
+      Authorization: `Bearer ${config.meraki.apiKey}`,
       Accept: "application/json",
     },
     signal: AbortSignal.timeout(15_000),

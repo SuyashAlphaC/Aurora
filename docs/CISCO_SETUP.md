@@ -12,7 +12,12 @@ Copy `services/api/.env.example` → `.env` and fill in values below.
 
 1. Create account at [Meraki Dashboard](https://dashboard.meraki.com/) or use **Cisco DevNet sandbox**
 2. Go to **My profile → API access** → Generate API key
-3. Find Organization ID: `GET https://api.meraki.com/api/v1/organizations` with header `X-Cisco-Meraki-API-Key`
+3. Find Organization ID:
+
+```bash
+curl -sL https://api.meraki.com/api/v1/organizations \
+  -H "Authorization: Bearer YOUR_API_KEY" | python3 -m json.tool
+```
 
 ```env
 MERAKI_API_KEY=your_key
