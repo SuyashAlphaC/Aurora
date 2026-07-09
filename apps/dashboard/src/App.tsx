@@ -7,8 +7,15 @@ function AppGate() {
 
   if (loading) {
     return (
-      <div className="login-screen">
-        <p className="muted">Checking session…</p>
+      <div className="bunker-gate">
+        <div className="scanlines" aria-hidden />
+        <div className="grid-bg" aria-hidden />
+        <div className="bunker-card" style={{ textAlign: "center" }}>
+          <p className="bunker-eyebrow mono">INITIALIZING SECURE CHANNEL</p>
+          <p className="mono" style={{ color: "var(--cyan)", marginTop: "1rem" }}>
+            VERIFYING SESSION…
+          </p>
+        </div>
       </div>
     );
   }

@@ -34,12 +34,31 @@ export function SystemStatus() {
   const webex = health.cisco?.webex;
 
   return (
-    <div className="system-status">
-      <span className="status-chip">Telemetry: {telemetry}</span>
-      <span className="status-chip">AI: {ai}</span>
-      <span className="status-chip">Auth: {health.auth}</span>
-      {meraki !== "not_configured" && <span className="status-chip on">Meraki</span>}
-      {webex !== "not_configured" && <span className="status-chip on">Webex</span>}
+    <div className="sys-modules">
+      <span className="sys-mod">
+        <span className="sys-mod-label">TELEM</span>
+        <span className="sys-mod-val mono">{telemetry}</span>
+      </span>
+      <span className="sys-mod">
+        <span className="sys-mod-label">FORECAST</span>
+        <span className="sys-mod-val mono">{ai}</span>
+      </span>
+      <span className="sys-mod">
+        <span className="sys-mod-label">AUTH</span>
+        <span className="sys-mod-val mono">{health.auth}</span>
+      </span>
+      {meraki !== "not_configured" && meraki !== false && (
+        <span className="sys-mod online">
+          <span className="sys-mod-label">MERAKI</span>
+          <span className="sys-mod-val">LINK</span>
+        </span>
+      )}
+      {webex !== "not_configured" && (
+        <span className="sys-mod online">
+          <span className="sys-mod-label">WEBEX</span>
+          <span className="sys-mod-val">LINK</span>
+        </span>
+      )}
     </div>
   );
 }

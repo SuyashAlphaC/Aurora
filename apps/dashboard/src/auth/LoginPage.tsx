@@ -51,17 +51,31 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-screen">
-      <div className="login-card">
-        <div className="login-brand">
-          <span className="login-logo">✦</span>
-          <h1>Aurora</h1>
-          <p>Light through the storm · Cisco-powered command center</p>
+    <div className="bunker-gate">
+      <div className="scanlines" aria-hidden />
+      <div className="grid-bg" aria-hidden />
+      <div className="radar-sweep" aria-hidden />
+
+      <div className="bunker-classification mono">RESTRICTED · DISASTER RESPONSE EOC</div>
+
+      <div className="bunker-card">
+        <div className="hazard-stripe" aria-hidden />
+
+        <div className="bunker-brand">
+          <img className="bunker-logo" src="/aurora-logo.png" alt="Aurora" width={88} height={88} />
+          <p className="bunker-eyebrow mono">EMERGENCY OPERATIONS GATEWAY</p>
+          <h1 className="bunker-title">AURORA</h1>
+          <p className="bunker-tagline">Light through the storm · Cisco-powered command center</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="login-form">
-          <label>
-            Username
+        <div className="bunker-status mono">
+          <span className="status-led" />
+          SECURE CHANNEL READY · DUO MFA REQUIRED
+        </div>
+
+        <form onSubmit={handleSubmit} className="bunker-form">
+          <label className="field-label">
+            <span className="mono">OPERATOR ID</span>
             <input
               type="text"
               value={username}
@@ -69,45 +83,51 @@ export function LoginPage() {
               autoComplete="username"
               required
               disabled={step === "mfa"}
+              placeholder="coordinator"
             />
           </label>
 
           {(step === "mfa" || passcode) && (
-            <label>
-              {step === "mfa" ? "Duo passcode" : "Passcode (optional)"}
+            <label className="field-label">
+              <span className="mono">{step === "mfa" ? "DUO PASSCODE" : "PASSCODE (OPTIONAL)"}</span>
               <input
                 type="text"
                 inputMode="numeric"
                 value={passcode}
                 onChange={(e) => setPasscode(e.target.value)}
                 autoComplete="one-time-code"
-                placeholder={step === "mfa" ? "6-digit code" : "Leave blank if Duo not configured"}
+                placeholder={step === "mfa" ? "000000" : "Leave blank if Duo not configured"}
                 required={step === "mfa"}
               />
             </label>
           )}
 
-          {error && <p className="login-error">{error}</p>}
+          {error && (
+            <div className="bunker-error">
+              <span className="mono">AUTH DENIED</span>
+              <p>{error}</p>
+            </div>
+          )}
 
-          <button type="submit" className="btn btn-primary" disabled={busy}>
-            {busy ? "Signing in…" : step === "mfa" ? "Verify passcode" : "Sign in"}
+          <button type="submit" className="btn btn-emergency" disabled={busy}>
+            {busy ? "AUTHENTICATING…" : step === "mfa" ? "VERIFY PASSCODE" : "ENTER COMMAND CENTER"}
           </button>
 
           {step === "credentials" && (
             <button type="button" className="btn btn-secondary" disabled={busy} onClick={handlePush}>
-              Sign in with Duo Push
+              DUO PUSH AUTHENTICATION
             </button>
           )}
 
           {step === "mfa" && (
             <button type="button" className="btn btn-ghost" onClick={() => setStep("credentials")}>
-              ← Back
+              ← BACK
             </button>
           )}
         </form>
 
-        <p className="login-footnote">
-          Without Duo credentials on the API, sign-in issues a coordinator session token after username only.
+        <p className="bunker-footnote mono">
+          UNAUTHORIZED ACCESS PROHIBITED · ALL SESSIONS LOGGED
         </p>
       </div>
     </div>

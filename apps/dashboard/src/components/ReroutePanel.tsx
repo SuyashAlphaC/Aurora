@@ -33,22 +33,32 @@ export function ReroutePanel({ alert, activeReroute, shelters, onAccept, busy }:
     const reasons = resolvedAlert?.recommendation?.reasons ?? alert?.recommendation?.reasons ?? [];
 
     return (
-      <div className="reroute-panel resolved">
-        <div className="reroute-active-badge">✓ Reroute active</div>
-        <h3>Intake redirected</h3>
-        <p className="reroute-flow">
-          New arrivals at <strong>{fromName}</strong> are being sent to{" "}
-          <strong>{toName}</strong>
-        </p>
+      <div className="dispatch-panel active">
+        <div className="dispatch-badge">
+          <span className="dispatch-led" />
+          REROUTE ACTIVE
+        </div>
+        <h3 className="dispatch-title">INTAKE REDIRECTED</h3>
+        <div className="dispatch-flow">
+          <div className="dispatch-node from">
+            <span className="mono">FROM</span>
+            <strong>{fromName}</strong>
+          </div>
+          <div className="dispatch-arrow">→</div>
+          <div className="dispatch-node to">
+            <span className="mono">TO</span>
+            <strong>{toName}</strong>
+          </div>
+        </div>
         {reasons.length > 0 && (
-          <ul className="reasons">
+          <ul className="dispatch-reasons">
             {reasons.map((r) => (
               <li key={r}>{r}</li>
             ))}
           </ul>
         )}
-        <p className="muted reroute-time">
-          Active since {new Date(display.acceptedAt).toLocaleTimeString()}
+        <p className="dispatch-time mono">
+          ACTIVE SINCE {new Date(display.acceptedAt).toLocaleTimeString()}
         </p>
       </div>
     );
@@ -56,9 +66,10 @@ export function ReroutePanel({ alert, activeReroute, shelters, onAccept, busy }:
 
   if (!alert?.recommendation) {
     return (
-      <div className="reroute-panel empty">
-        <h3>Reroute recommendation</h3>
-        <p className="muted">Select a critical alert to view AI reroute suggestion.</p>
+      <div className="dispatch-panel idle">
+        <div className="dispatch-idle-icon">◎</div>
+        <h3 className="dispatch-title">AWAITING INCIDENT</h3>
+        <p>Select a critical alert to view AI reroute recommendation.</p>
       </div>
     );
   }
@@ -66,13 +77,19 @@ export function ReroutePanel({ alert, activeReroute, shelters, onAccept, busy }:
   const rec = alert.recommendation;
 
   return (
-    <div className="reroute-panel pending">
-      <h3>Reroute recommendation</h3>
-      <p className="reroute-target">
-        Send new arrivals to <strong>{rec.toShelterName}</strong>
+    <div className="dispatch-panel pending">
+      <div className="dispatch-badge warn">
+        <span className="dispatch-led warn" />
+        ACTION REQUIRED
+      </div>
+      <h3 className="dispatch-title">REROUTE ORDER</h3>
+      <p className="dispatch-target">
+        Redirect intake to <strong>{rec.toShelterName}</strong>
       </p>
-      <p className="eta">Estimated capacity breach in ~{rec.etaMinutes} min</p>
-      <ul className="reasons">
+      <p className="dispatch-eta mono">
+        CAPACITY BREACH IN ~{rec.etaMinutes} MIN
+      </p>
+      <ul className="dispatch-reasons">
         {rec.reasons.map((r) => (
           <li key={r}>{r}</li>
         ))}
@@ -80,11 +97,11 @@ export function ReroutePanel({ alert, activeReroute, shelters, onAccept, busy }:
       {alert.status === "OPEN" && (
         <button
           type="button"
-          className="btn btn-primary"
+          className="btn btn-emergency btn-wide"
           disabled={busy}
           onClick={() => onAccept(alert.id)}
         >
-          {busy ? "Accepting…" : "Accept reroute"}
+          {busy ? "EXECUTING…" : "▸ AUTHORIZE REROUTE"}
         </button>
       )}
     </div>

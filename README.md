@@ -102,10 +102,7 @@ See [docs/WEBEX_DUO_QUICKSTART.md](docs/WEBEX_DUO_QUICKSTART.md) for free Duo + 
 | [docs/PROJECT.md](docs/PROJECT.md) | Problem, impact, architecture |
 | [docs/API_CONTRACT.md](docs/API_CONTRACT.md) | Integration contract |
 | [docs/PITCH_DECK.md](docs/PITCH_DECK.md) | 3-slide pitch + script |
-| [docs/SUBMISSION.md](docs/SUBMISSION.md) | Submission checklist |
 | [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) | Credential setup guide |
-| [docs/WEBEX_DUO_QUICKSTART.md](docs/WEBEX_DUO_QUICKSTART.md) | Free Duo + Webex in ~25 min |
-
 ## Team
 
 Code With Cisco 2026 — Silver Flag CSR Challenge

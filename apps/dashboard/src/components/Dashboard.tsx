@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
+import { useClock } from "../hooks/useClock";
 import { AlertFeed } from "./AlertFeed";
+import { CrisisBanner } from "./CrisisBanner";
 import { SystemStatus } from "./SystemStatus";
 import { ReroutePanel } from "./ReroutePanel";
 import { ShelterCard } from "./ShelterCard";
@@ -10,6 +12,7 @@ import type { Alert } from "../types";
 
 export function Dashboard() {
   const { username, mode, logout, token } = useAuth();
+  const clock = useClock();
   const { shelters, alerts, connected, loading, error, activeReroute, acceptReroute, useMock, lastEvent } =
     useLiveData(token);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -40,57 +43,102 @@ export function Dashboard() {
 
   const criticalCount = shelters.filter((s) => s.state === "CRITICAL").length;
   const warningCount = shelters.filter((s) => s.state === "WARNING").length;
+  const openAlerts = alerts.filter((a) => a.status === "OPEN").length;
 
   return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div>
-          <h1>Aurora Command Center</h1>
-          <p className="subtitle">
-            Live disaster shelter operations · {username} · {mode ?? "session"} auth
-          </p>
+    <div className="ops-center">
+      <div className="scanlines" aria-hidden />
+      <div className="grid-bg" aria-hidden />
+
+      <CrisisBanner criticalCount={criticalCount} warningCount={warningCount} openAlerts={openAlerts} />
+
+      <header className="command-header">
+        <div className="command-header-left">
+          <div className="command-brand">
+            <img className="command-logo" src="/aurora-logo.png" alt="" width={48} height={48} />
+            <div>
+              <p className="command-eyebrow">DISASTER RESPONSE · SILVER FLAG</p>
+              <h1 className="command-title">AURORA COMMAND</h1>
+              <p className="command-sub">
+                OPERATOR <span className="mono">{(username ?? "unknown").toUpperCase()}</span> · AUTH{" "}
+                <span className="mono">{(mode ?? "session").toUpperCase()}</span>
+              </p>
+            </div>
+          </div>
           <SystemStatus />
         </div>
-        <div className="topbar-meta">
-          <span className={`live-dot ${connected ? "on" : "off"}`} />
-          {connected ? "Live" : "Offline"} · {useMock ? "mock" : "API"}
-          {lastEvent && <span className="last-event"> · {lastEvent}</span>}
+
+        <div className="command-header-right">
+          <div className="clock-block">
+            <span className="clock-label">OPS TIME</span>
+            <time className="clock-value mono">{clock}</time>
+          </div>
+          <div className="feed-status">
+            <span className={`signal-pulse ${connected ? "live" : "dead"}`} />
+            <span className="mono">{connected ? "LIVE FEED" : "OFFLINE"}</span>
+            <span className="feed-mode">{useMock ? "MOCK" : "API"}</span>
+            {lastEvent && <span className="last-event mono">▸ {lastEvent}</span>}
+          </div>
           <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
-            Sign out
+            DISCONNECT
           </button>
         </div>
       </header>
 
-      <div className="stats-row">
-        <div className="stat">
-          <span className="stat-value">{shelters.length}</span>
-          <span className="stat-label">Shelters</span>
+      <div className="telemetry-strip">
+        <div className="telemetry-cell">
+          <span className="telemetry-num">{shelters.length}</span>
+          <span className="telemetry-label">SITES ONLINE</span>
         </div>
-        <div className="stat stat-warn">
-          <span className="stat-value">{warningCount}</span>
-          <span className="stat-label">Warning</span>
+        <div className="telemetry-cell warn">
+          <span className="telemetry-num">{warningCount}</span>
+          <span className="telemetry-label">WARNING</span>
         </div>
-        <div className="stat stat-crit">
-          <span className="stat-value">{criticalCount}</span>
-          <span className="stat-label">Critical</span>
+        <div className={`telemetry-cell crit ${criticalCount > 0 ? "pulse" : ""}`}>
+          <span className="telemetry-num">{criticalCount}</span>
+          <span className="telemetry-label">CRITICAL</span>
         </div>
-        <div className="stat">
-          <span className="stat-value">{alerts.filter((a) => a.status === "OPEN").length}</span>
-          <span className="stat-label">Open alerts</span>
+        <div className="telemetry-cell">
+          <span className="telemetry-num">{openAlerts}</span>
+          <span className="telemetry-label">OPEN ALERTS</span>
+        </div>
+        <div className="telemetry-cell accent">
+          <span className="telemetry-num">
+            {shelters.reduce((n, s) => n + s.currentOccupancy, 0)}
+          </span>
+          <span className="telemetry-label">TOTAL OCCUPANCY</span>
         </div>
       </div>
 
-      {error && <p className="banner-error">{error}</p>}
-      {loading && <p className="banner-loading">Loading shelter data…</p>}
+      {error && (
+        <div className="banner banner-error">
+          <span className="banner-tag">FAULT</span>
+          {error}
+        </div>
+      )}
+      {loading && (
+        <div className="banner banner-loading">
+          <span className="banner-tag">SYNC</span>
+          Establishing telemetry uplink…
+        </div>
+      )}
 
-      <div className="dashboard-grid">
-        <section className="panel map-panel">
-          <h2>Live map</h2>
+      <div className="command-grid">
+        <section className="hud-panel hud-map span-2">
+          <header className="hud-head">
+            <span className="hud-code">SEC-01</span>
+            <h2>TACTICAL SHELTER MAP</h2>
+            <span className="hud-live">RADAR ACTIVE</span>
+          </header>
           <ShelterMap shelters={shelters} activeReroute={activeReroute} />
         </section>
 
-        <section className="panel">
-          <h2>Shelters</h2>
+        <section className="hud-panel hud-shelters">
+          <header className="hud-head">
+            <span className="hud-code">SEC-02</span>
+            <h2>SITE TELEMETRY</h2>
+            <span className="hud-count">{shelters.length} NODES</span>
+          </header>
           <div className="shelter-list">
             {shelters.map((s) => (
               <ShelterCard key={s.id} shelter={s} />
@@ -98,13 +146,21 @@ export function Dashboard() {
           </div>
         </section>
 
-        <section className="panel">
-          <h2>Alerts</h2>
+        <section className="hud-panel hud-alerts">
+          <header className="hud-head">
+            <span className="hud-code">SEC-03</span>
+            <h2>INCIDENT FEED</h2>
+            <span className={`hud-count ${openAlerts > 0 ? "hot" : ""}`}>{openAlerts} ACTIVE</span>
+          </header>
           <AlertFeed alerts={alerts} selectedId={panelAlert?.id} onSelect={setSelectedAlert} />
         </section>
 
-        <section className="panel">
-          <h2>Reroute</h2>
+        <section className="hud-panel hud-reroute">
+          <header className="hud-head">
+            <span className="hud-code">SEC-04</span>
+            <h2>REROUTE COMMAND</h2>
+            <span className="hud-count">AI ASSIST</span>
+          </header>
           <ReroutePanel
             alert={panelAlert}
             activeReroute={activeReroute}
@@ -114,6 +170,10 @@ export function Dashboard() {
           />
         </section>
       </div>
+
+      <footer className="command-footer mono">
+        AURORA EOC · CISCO MERAKI · WEBEX · DUO · LIGHT THROUGH THE STORM
+      </footer>
     </div>
   );
 }
