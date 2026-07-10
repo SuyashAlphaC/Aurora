@@ -81,6 +81,42 @@ AUTH_DISABLED=false
 
 **Verify:** Dashboard login → enter Duo passcode → `mode: duo` in login response.
 
+### External access (judges, teammates, demo viewers)
+
+Aurora uses Duo **Auth API** on the server: login sends a push (or passcode check) for whatever **Operator ID** the user types. The push goes to the **Duo user with that username** in *your* Duo account — not to a random visitor's phone.
+
+| Scenario | What happens |
+|----------|----------------|
+| User logs in as `coordinator` (your enrolled user) | Push goes to **your** Duo Mobile |
+| User types a username that **doesn't exist** in Duo | Login fails — user must enroll or is denied by policy |
+| You **create** the user in Duo Admin and they activate Duo Mobile | Push goes to **their** phone |
+| User exists but **Duo Mobile not activated** | Error: user must enroll a device |
+| Auth API not enabled for that user | Push denied by Duo policy |
+
+Aurora has no separate user database: anyone who passes Duo MFA for a username gets a session for that username. Control access by who you add in Duo Admin.
+
+**Option A — Shared demo account (quickest)**  
+Everyone uses `coordinator`. You approve the Duo push on your phone during the live demo. Fine for a guided walkthrough; not ideal for self-serve access.
+
+**Option B — Per-person Duo users (recommended for judges)**  
+In [Duo Admin](https://admin.duosecurity.com):
+
+1. **Users → Add user** (e.g. `judge.smith` — usernames are case-sensitive)
+2. Send enrollment link or QR for **Duo Mobile**
+3. Under your **Auth API** application, enable the user (or use **Enable for all users**)
+4. Share Aurora URL + exact username; they click **DUO PUSH AUTHENTICATION** → approve on their device
+
+**Option C — Passcode instead of push**  
+Enrolled users can enter a **6-digit passcode** from Duo Mobile (works without push). Same enrollment requirement as Option B.
+
+**Checklist before sharing Aurora externally**
+
+- [ ] Create each external user in Duo Admin
+- [ ] Each user activates Duo Mobile (or you provide passcode workflow)
+- [ ] Auth API enabled for those users
+- [ ] `AUTH_DISABLED=false` in `services/api/.env`
+- [ ] Share the exact **Operator ID** each person must type at login
+
 ---
 
 ## 4. ThousandEyes (Observe) — Optional

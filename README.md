@@ -93,7 +93,7 @@ Aurora/
 | Secure | Duo Auth API | `services/api/src/cisco/duo.ts` |
 | Intelligence | Explainable AI | `services/ai/app/` |
 
-See [docs/WEBEX_DUO_QUICKSTART.md](docs/WEBEX_DUO_QUICKSTART.md) for free Duo + Webex setup (~25 min), or [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) for all integrations.
+See [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) for all integrations.
 
 ## Documentation
 
