@@ -300,6 +300,17 @@ body {
   border: 1px solid rgba(0, 230, 118, 0.3);
 }
 
+.bunker-status-warn {
+  color: var(--amber);
+  background: var(--amber-dim);
+  border-color: rgba(245, 158, 11, 0.35);
+}
+
+.status-led-warn {
+  background: var(--amber);
+  box-shadow: 0 0 10px var(--amber);
+}
+
 .status-led {
   width: 8px;
   height: 8px;

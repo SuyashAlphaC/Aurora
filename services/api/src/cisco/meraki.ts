@@ -44,14 +44,22 @@ function mapUplinkStatus(uplinks: MerakiUplinkResponseItem["uplinks"]): UplinkSt
   return "UP";
 }
 
-/** GET /organizations/{orgId}/appliance/uplinks/statuses */
+/** GET /organizations/{orgId}/appliance/uplinks/statuses (global) or /uplinks/statuses (some shards e.g. India) */
 export async function fetchOrganizationUplinkStatuses(): Promise<MerakiUplinkStatus[]> {
   if (!isMerakiConfigured()) return [];
 
   const orgId = config.meraki.orgId;
-  const data = await merakiFetch<MerakiUplinkResponseItem[]>(
-    `/organizations/${orgId}/appliance/uplinks/statuses`
-  );
+  let data: MerakiUplinkResponseItem[];
+  try {
+    data = await merakiFetch<MerakiUplinkResponseItem[]>(
+      `/organizations/${orgId}/appliance/uplinks/statuses`
+    );
+  } catch (err) {
+    if (!isMerakiNotFoundError(err)) throw err;
+    data = await merakiFetch<MerakiUplinkResponseItem[]>(
+      `/organizations/${orgId}/uplinks/statuses`
+    );
+  }
 
   return data.map((item) => ({
     networkId: item.networkId,
@@ -76,4 +84,22 @@ export async function checkMerakiConnection(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/** True when org has MX appliance networks and uplink status API responds */
+export async function checkMerakiUplinksAvailable(): Promise<boolean> {
+  if (!isMerakiConfigured()) return false;
+  try {
+    await fetchOrganizationUplinkStatuses();
+    return true;
+  } catch (err) {
+    const msg = String(err);
+    if (msg.includes("404")) return false;
+    throw err;
+  }
+}
+
+export function isMerakiNotFoundError(err: unknown): boolean {
+  const msg = String(err);
+  return msg.includes("Meraki API 404") || msg.includes("Page not found");
 }

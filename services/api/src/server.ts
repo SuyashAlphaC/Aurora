@@ -3,14 +3,13 @@ import express from "express";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { checkAiHealth } from "./clients/ai.js";
-import { checkMerakiConnection } from "./cisco/meraki.js";
-import { duoCheck } from "./cisco/duo.js";
+import { checkMerakiConnection, checkMerakiUplinksAvailable } from "./cisco/meraki.js";
+import { duoCheck, verifySessionToken } from "./cisco/duo.js";
 import { checkThousandEyesConnection } from "./cisco/thousandeyes.js";
 import { config, isDuoConfigured, isMerakiConfigured, isWebexConfigured } from "./config.js";
 import { initDatabase } from "./db/index.js";
 import { initMedicalSchema } from "./db/medical.js";
 import { startMerakiPoller, stopMerakiPoller } from "./jobs/merakiPoller.js";
-import { verifySessionToken } from "./cisco/duo.js";
 import { requireAuth } from "./middleware/auth.js";
 import { alertsRouter } from "./routes/alerts.js";
 import { authRouter } from "./routes/auth.js";
@@ -66,6 +65,10 @@ app.get("/api/health", async (_req, res) => {
     },
     cisco: {
       meraki: merakiConfigured ? await checkMerakiConnection() : "not_configured",
+      merakiUplinks:
+        merakiConfigured && (await checkMerakiConnection())
+          ? await checkMerakiUplinksAvailable().catch(() => false)
+          : false,
       webex: webexConfigured ? "configured" : "not_configured",
       duo: duoConfigured ? await duoCheck() : "not_configured",
       thousandEyes: await checkThousandEyesConnection(),

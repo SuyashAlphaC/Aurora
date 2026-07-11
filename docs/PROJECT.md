@@ -289,33 +289,3 @@ User           { id, name, role, duoVerified }
 | AI | Python microservice **or** JS heuristic module | explainable forecast + weighted scoring |
 | Cisco SDKs | Meraki Dashboard API, Webex SDK, Duo Web SDK, ThousandEyes API | the real integrations |
 | Simulator | small Node/Python script | drives the live demo deterministically |
-
-> Final stack is confirmed at the start of the build phase based on team strengths (mixed team → React + Node keeps one language across FE/BE, with an optional small Python AI service).
-
----
-
-## 8. Scope for the 11-Day Sprint
-
-**In scope (demo-complete vertical slice):** live dashboard + map, real Meraki-sandbox connectivity data, sensor simulator feeding occupancy/environment, state + anomaly engine, explainable AI forecast + reroute, **real Webex alerts**, **real Duo MFA**, one rock-solid golden-path demo.
-
-**Out of scope (correctly):** physical hardware, production deployment/scale, full user management, mobile apps, exhaustive edge-case handling, historical data warehouse.
-
-**Guiding principle:** *demo depth over feature breadth* — one flawless connected scenario beats twenty half-working features.
-
----
-
-## 9. Deliverables (per the challenge brief)
-
-| # | Deliverable | Status |
-|---|-------------|--------|
-| 1 | 3-slide pitch deck | ✅ `docs/PITCH_DECK.md`, `docs/pitch/index.html` |
-| 2 | 5-minute recorded team pitch | ⬜ Team to record |
-| 3 | Short recorded PoC demo | ⬜ Team to record — script in `docs/SUBMISSION.md` |
-| 4 | GitHub repository | ✅ https://github.com/SuyashAlphaC/Aurora |
-
-See **`docs/SUBMISSION.md`** for judge demo script, Cisco honesty matrix, and checklist.
-
-### Phase 2 extensions (built in PoC)
-
-- **Evacuee Medical Identity** — pre-registered health profiles via ID lookup or face scan (`docs/MEDICAL_IDENTITY.md`)
-- **Tactical EOC UI** — disaster command-center dashboard with SEC-01–SEC-05 panels

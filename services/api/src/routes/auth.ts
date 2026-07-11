@@ -23,7 +23,35 @@ authRouter.post("/login", async (req, res) => {
     return;
   }
 
-  if (!isDuoConfigured() || factor === "dev" || config.authDisabled) {
+  if (config.authDisabled) {
+    const token = createDevSession(username);
+    res.json({
+      token,
+      username,
+      mode: "dev",
+      message: "AUTH_DISABLED=true — development session only",
+    });
+    return;
+  }
+
+  if (!isDuoConfigured()) {
+    if (factor === "push" || factor === "passcode" || passcode) {
+      res.status(503).json({
+        error: "Duo MFA is not configured on the API",
+        hint: "Create services/api/.env with DUO_CLIENT_ID, DUO_CLIENT_SECRET, DUO_API_HOST from Duo Admin, then restart the API",
+      });
+      return;
+    }
+    if (factor === "dev") {
+      const token = createDevSession(username);
+      res.json({
+        token,
+        username,
+        mode: "dev",
+        message: "Development session — set Duo credentials for production MFA",
+      });
+      return;
+    }
     const token = createDevSession(username);
     res.json({
       token,
@@ -76,6 +104,13 @@ authRouter.post("/verify", async (req, res) => {
   }
 
   if (!isDuoConfigured()) {
+    if (passcode) {
+      res.status(503).json({
+        error: "Duo MFA is not configured on the API",
+        hint: "Set DUO_CLIENT_ID, DUO_CLIENT_SECRET, DUO_API_HOST in services/api/.env",
+      });
+      return;
+    }
     res.json({ token: createDevSession(username), username, mode: "dev" });
     return;
   }

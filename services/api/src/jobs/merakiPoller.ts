@@ -1,10 +1,14 @@
 import { config, isMerakiConfigured } from "../config.js";
 import { getDb, getShelterByMerakiNetworkId, listShelters } from "../db/index.js";
-import { fetchOrganizationUplinkStatuses } from "../cisco/meraki.js";
+import {
+  fetchOrganizationUplinkStatuses,
+  isMerakiNotFoundError,
+} from "../cisco/meraki.js";
 import { processTelemetry } from "../services/telemetry.js";
 import type { WsHub } from "../ws/hub.js";
 
 let pollTimer: ReturnType<typeof setInterval> | null = null;
+let uplinksUnavailable = false;
 
 export function startMerakiPoller(ws: WsHub): void {
   if (!isMerakiConfigured()) {
@@ -13,6 +17,8 @@ export function startMerakiPoller(ws: WsHub): void {
   }
 
   const poll = async () => {
+    if (uplinksUnavailable) return;
+
     try {
       const statuses = await fetchOrganizationUplinkStatuses();
       const shelters = listShelters();
@@ -38,8 +44,22 @@ export function startMerakiPoller(ws: WsHub): void {
         );
       }
 
-      console.log(`[meraki] Polled ${statuses.length} uplink statuses`);
+      if (statuses.length > 0) {
+        console.log(`[meraki] Polled ${statuses.length} uplink statuses`);
+      }
     } catch (err) {
+      if (isMerakiNotFoundError(err)) {
+        uplinksUnavailable = true;
+        if (pollTimer) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        }
+        console.warn(
+          "[meraki] Uplink API returned 404 — org likely has no MX/appliance networks. " +
+            "Demo telemetry uses the simulator. To silence: unset MERAKI_* or add an MX network in Dashboard."
+        );
+        return;
+      }
       console.error("[meraki] Poll failed:", err);
     }
   };

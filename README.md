@@ -8,7 +8,13 @@
 [![Cisco](https://img.shields.io/badge/Cisco-Meraki%20%7C%20Webex%20%7C%20Duo-blue)](docs/CISCO_SETUP.md)
 [![Submit](https://img.shields.io/badge/Submission-guide-green)](docs/SUBMISSION.md)
 
-**Repository:** https://github.com/SuyashAlphaC/Aurora
+**Repository:** https://github.com/SuyashAlphaC/Aurora (set **private** for final submission per FAQ)
+
+| Submission docs | |
+|-----------------|--|
+| [ADR](docs/ADR.md) | Major architectural decisions (1–2 pages) |
+| [Architecture diagrams](docs/architecture/DIAGRAMS.md) | Components, golden path, auth, state model |
+| [Deploy on Vercel](docs/VERCEL_DEPLOY.md) | Dashboard on Vercel + API on Railway/Docker |
 
 ## What it does
 
@@ -86,7 +92,7 @@ Aurora/
 ├── apps/dashboard/     React EOC UI + Medical ID panel
 ├── services/api/       Node.js API + Cisco integrations
 ├── services/ai/        Python AI (forecast + reroute)
-├── docs/               Project docs, pitch, submission guide
+├── docs/               Project docs
 └── scripts/            Demo automation, auth helper, smoke tests
 ```
 
@@ -107,13 +113,9 @@ See [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) · quickstart [docs/WEBEX_DUO_QUI
 
 | Doc | Purpose |
 |---|---|
-| [docs/SUBMISSION.md](docs/SUBMISSION.md) | **Judge demo script + checklist** |
 | [docs/PROJECT.md](docs/PROJECT.md) | Problem, impact, architecture |
-| [docs/PITCH_DECK.md](docs/PITCH_DECK.md) | 3-slide pitch + script |
-| [docs/pitch/index.html](docs/pitch/index.html) | Printable pitch (Ctrl+P → PDF) |
 | [docs/API_CONTRACT.md](docs/API_CONTRACT.md) | Integration contract |
 | [docs/MEDICAL_IDENTITY.md](docs/MEDICAL_IDENTITY.md) | Evacuee medical registry |
-| [docs/WORK_DISTRIBUTION.md](docs/WORK_DISTRIBUTION.md) | Team roles |
 | [docs/CISCO_SETUP.md](docs/CISCO_SETUP.md) | Credential setup |
 
 ## Tests
@@ -123,16 +125,6 @@ cd services/ai && pytest tests/ -v
 cd services/api && npm test
 ./scripts/smoke-api.sh    # API must be running
 ```
-
-## Team
-
-| Role | GitHub | Focus |
-|------|--------|-------|
-| Lead / Backend & Cisco | [@SuyashAlphaC](https://github.com/SuyashAlphaC) | API, Meraki, Webex, Duo, DevOps |
-| Member 2 | *@member2* | AI service, simulator, forecasting |
-| Member 3 | *@member3* | Dashboard, EOC UI, Medical ID |
-
-*Update handles in README and `.github/CODEOWNERS` with your teammates' GitHub usernames.*
 
 ## License
 

@@ -1,6 +1,8 @@
-import { FormEvent, useState } from "react";
-import { ApiError } from "../api/client";
+import { FormEvent, useEffect, useState } from "react";
+import { ApiError, apiFetch } from "../api/client";
 import { useAuth } from "./AuthContext";
+
+type AuthHealth = "loading" | "duo" | "dev" | "disabled";
 
 export function LoginPage() {
   const { login, verifyPasscode } = useAuth();
@@ -9,6 +11,17 @@ export function LoginPage() {
   const [step, setStep] = useState<"credentials" | "mfa">("credentials");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [authHealth, setAuthHealth] = useState<AuthHealth>("loading");
+
+  useEffect(() => {
+    apiFetch<{ auth: string }>("/api/health")
+      .then((h) => {
+        if (h.auth === "duo") setAuthHealth("duo");
+        else if (h.auth === "disabled") setAuthHealth("disabled");
+        else setAuthHealth("dev");
+      })
+      .catch(() => setAuthHealth("dev"));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -21,6 +34,11 @@ export function LoginPage() {
       }
 
       const res = await login(username, passcode || undefined, passcode ? "passcode" : undefined);
+
+      if (res.token && res.mode === "dev" && (passcode || step === "mfa")) {
+        setError("Login returned a dev session — Duo MFA did not run. Check services/api/.env");
+        return;
+      }
 
       if (res.requiresMfa) {
         setStep("mfa");
@@ -40,6 +58,12 @@ export function LoginPage() {
 
   async function handlePush() {
     setError(null);
+    if (authHealth !== "duo") {
+      setError(
+        "Duo is not active on the API (missing services/api/.env). Push was not sent — restore DUO_CLIENT_ID, DUO_CLIENT_SECRET, DUO_API_HOST and restart the API."
+      );
+      return;
+    }
     setBusy(true);
     try {
       await login(username, undefined, "push");
@@ -68,9 +92,12 @@ export function LoginPage() {
           <p className="bunker-tagline">Light through the storm · Cisco-powered command center</p>
         </div>
 
-        <div className="bunker-status mono">
-          <span className="status-led" />
-          SECURE CHANNEL READY · DUO MFA REQUIRED
+        <div className={`bunker-status mono ${authHealth === "duo" ? "" : "bunker-status-warn"}`}>
+          <span className={`status-led ${authHealth === "duo" ? "" : "status-led-warn"}`} />
+          {authHealth === "loading" && "CHECKING DUO STATUS…"}
+          {authHealth === "duo" && "SECURE CHANNEL READY · DUO MFA REQUIRED"}
+          {authHealth === "disabled" && "AUTH DISABLED · DEV MODE ONLY"}
+          {authHealth === "dev" && "DUO NOT CONFIGURED · ADD services/api/.env · PUSH DISABLED"}
         </div>
 
         <form onSubmit={handleSubmit} className="bunker-form">
@@ -114,7 +141,12 @@ export function LoginPage() {
           </button>
 
           {step === "credentials" && (
-            <button type="button" className="btn btn-secondary" disabled={busy} onClick={handlePush}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              disabled={busy || authHealth !== "duo"}
+              onClick={handlePush}
+            >
               DUO PUSH AUTHENTICATION
             </button>
           )}
