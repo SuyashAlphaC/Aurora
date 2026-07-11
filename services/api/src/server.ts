@@ -8,18 +8,21 @@ import { duoCheck } from "./cisco/duo.js";
 import { checkThousandEyesConnection } from "./cisco/thousandeyes.js";
 import { config, isDuoConfigured, isMerakiConfigured, isWebexConfigured } from "./config.js";
 import { initDatabase } from "./db/index.js";
+import { initMedicalSchema } from "./db/medical.js";
 import { startMerakiPoller, stopMerakiPoller } from "./jobs/merakiPoller.js";
 import { verifySessionToken } from "./cisco/duo.js";
 import { requireAuth } from "./middleware/auth.js";
 import { alertsRouter } from "./routes/alerts.js";
 import { authRouter } from "./routes/auth.js";
 import { createRerouteRouter } from "./routes/reroute.js";
+import { medicalRouter } from "./routes/medical.js";
 import { sheltersRouter } from "./routes/shelters.js";
 import { createTelemetryRouter } from "./routes/telemetry.js";
 import { createWebhooksRouter } from "./routes/webhooks.js";
 import { wsHub } from "./ws/hub.js";
 
 initDatabase();
+initMedicalSchema();
 
 const app = express();
 app.use(cors());
@@ -82,6 +85,7 @@ app.use("/api", requireAuth);
 app.use("/api/shelters", sheltersRouter);
 app.use("/api/alerts", alertsRouter);
 app.use("/api/reroute", createRerouteRouter(wsHub));
+app.use("/api/medical", medicalRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });

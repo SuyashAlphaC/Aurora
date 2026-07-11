@@ -305,7 +305,17 @@ User           { id, name, role, duoVerified }
 ---
 
 ## 9. Deliverables (per the challenge brief)
-1. ✅ 3-slide pitch deck
-2. ✅ 5-minute recorded team pitch
-3. ✅ Short recorded PoC demo (the golden path)
-4. ✅ GitHub repository with code (this project)
+
+| # | Deliverable | Status |
+|---|-------------|--------|
+| 1 | 3-slide pitch deck | ✅ `docs/PITCH_DECK.md`, `docs/pitch/index.html` |
+| 2 | 5-minute recorded team pitch | ⬜ Team to record |
+| 3 | Short recorded PoC demo | ⬜ Team to record — script in `docs/SUBMISSION.md` |
+| 4 | GitHub repository | ✅ https://github.com/SuyashAlphaC/Aurora |
+
+See **`docs/SUBMISSION.md`** for judge demo script, Cisco honesty matrix, and checklist.
+
+### Phase 2 extensions (built in PoC)
+
+- **Evacuee Medical Identity** — pre-registered health profiles via ID lookup or face scan (`docs/MEDICAL_IDENTITY.md`)
+- **Tactical EOC UI** — disaster command-center dashboard with SEC-01–SEC-05 panels

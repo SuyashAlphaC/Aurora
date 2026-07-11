@@ -364,7 +364,8 @@
         <span class="badge">Webex Engage</span>
         <span class="badge">Duo Secure</span>
         <span class="badge">ThousandEyes Observe</span>
-        <span class="badge">Explainable Forecasting</span>
+        <span class="badge">Explainable AI</span>
+        <span class="badge">Medical ID</span>
       </div>
     </section>
 
@@ -614,6 +615,18 @@
       </div>
 
       <div class="stack-card">
+        <h3><span class="layer-tag">Care</span> Evacuee Medical Identity (SEC-05)</h3>
+        <dl class="why">
+          <dt>What it does</dt>
+          <dd>Pre-disaster health profiles (blood group, allergies, medications). Coordinators lookup by ID or face scan when family is not present.</dd>
+          <dt>Why it matters</dt>
+          <dd>Hospitals need allergy and medication context in the first minutes — especially for separated children and elderly evacuees.</dd>
+          <dt>Wired in code</dt>
+          <dd><code>/api/medical/*</code> (Duo-secured) · dashboard <strong>MEDICAL ID</strong> panel · demo IDs <code>AUR-1001</code>–<code>1004</code>.</dd>
+        </dl>
+      </div>
+
+      <div class="stack-card">
         <h3><span class="layer-tag">Intelligence</span> Forecasting &amp; reroute service</h3>
         <dl class="why">
           <dt>What it does</dt>
@@ -653,7 +666,7 @@
         <div class="flow-arrow">↓</div>
         <div class="flow-row">
           <div class="flow-label">View</div>
-          <div class="flow-body"><strong>Dashboard</strong> (React, :5173) · Duo login · map · alerts · reroute panel</div>
+          <div class="flow-body"><strong>Dashboard</strong> (React EOC, :5173) · Duo login · map · alerts · reroute · <strong>Medical ID</strong></div>
         </div>
       </div>
 
@@ -665,6 +678,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │  AURORA API (services/api)                                      │
 │  · State engine    · Alerts    · Webhooks    · Auth (Duo)       │
+│  · Medical registry (/api/medical)                               │
 │  · Cisco: Meraki · Webex · Duo · ThousandEyes                  │
 └───────┬─────────────────────────────┬───────────────────────────┘
         │ REST                         │ WebSocket /ws/live
@@ -699,10 +713,11 @@
       <ol>
         <li>Start API, forecasting service, and dashboard.</li>
         <li>Login as <strong>coordinator</strong> with <strong>Duo push</strong> or passcode.</li>
-        <li>Run <code>FAST=1 ./scripts/demo-golden-path.sh</code>.</li>
+        <li>Run <code>DUO_PASSCODE=xxx FAST=1 ./scripts/demo-golden-path.sh</code> (or <code>DUO_PUSH=1</code>).</li>
         <li>Show Shelter B turning <strong>CRITICAL</strong> on the map.</li>
         <li>Open <strong>Webex space</strong> — Aurora Critical Alert card appears.</li>
         <li>Accept reroute to Shelter D on the dashboard.</li>
+        <li><strong>MEDICAL ID</strong> → <code>AUR-1001</code> → allergy alert strip.</li>
         <li>Show <code>/api/health</code>: Duo, Webex, Meraki configured.</li>
       </ol>
 
@@ -716,7 +731,9 @@
           <tr><td>Connectivity</td><td>Meraki API (India org)</td><td>Per-shelter Meraki networks</td></tr>
           <tr><td>Alerts</td><td>Webex bot (live)</td><td>Same + ngrok webhook for in-card accept</td></tr>
           <tr><td>Access control</td><td>Duo MFA (live)</td><td>Duo + org policies</td></tr>
-          <tr><td>Path monitoring</td><td>ThousandEyes health</td><td>Per-shelter ThousandEyes tests</td></tr>
+          <tr><td>Medical intake</td><td>ID lookup + face scan (Duo-secured)</td><td>Regional health locker + QR wristbands</td></tr>
+          <tr><td>Path monitoring</td><td>ThousandEyes health + rules engine</td><td>Per-shelter ThousandEyes tests + Splunk</td></tr>
+          <tr><td>Sensing</td><td>Telemetry simulator</td><td>Meraki MT/MV + Cisco Spaces API</td></tr>
         </tbody>
       </table>
 
@@ -725,7 +742,7 @@
         <li><strong>Mission-fit</strong> — shelter connectivity, resource tracking, early warning in one system.</li>
         <li><strong>Cisco-native</strong> — five challenge layers wired to real APIs, not slide-ware.</li>
         <li><strong>Demonstrable</strong> — golden-path script, health endpoint, recorded demo in minutes.</li>
-        <li><strong>Human-centered</strong> — explainable reroute reasons; coordinators stay in control.</li>
+        <li><strong>Human-centered</strong> — explainable reroute reasons; medical ID when family is absent.</li>
         <li><strong>Scalable</strong> — same software layer for 5 shelters or 500 across Meraki’s cloud fabric.</li>
       </ul>
 

@@ -41,9 +41,11 @@ export async function apiFetch<T>(
     },
   });
 
-  const data = await parseJson<T & { error?: string }>(res);
+  const data = await parseJson<T & { error?: string; details?: string; hint?: string }>(res);
   if (!res.ok) {
-    throw new ApiError((data as { error?: string }).error ?? res.statusText, res.status);
+    const body = data as { error?: string; details?: string; hint?: string };
+    const msg = [body.error, body.hint, body.details].filter(Boolean).join(" — ");
+    throw new ApiError(msg || res.statusText, res.status);
   }
   return data;
 }

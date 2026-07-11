@@ -101,3 +101,34 @@ export interface WsEvent<T = unknown> {
   event: string;
   data: T;
 }
+
+export interface EvacueeMedicalProfile {
+  id: string;
+  evacueeId: string;
+  fullName: string;
+  age: number;
+  bloodGroup: string;
+  allergies: string[];
+  conditions: string[];
+  medications: string[];
+  emergencyContact: string;
+  notes: string;
+  faceDescriptor: number[] | null;
+  registeredAt: string;
+  registeredBy: string | null;
+}
+
+/** Coordinator-facing profile — no raw face embedding */
+export interface EvacueeMedicalPublic {
+  evacueeId: string;
+  fullName: string;
+  age: number;
+  bloodGroup: string;
+  allergies: string[];
+  conditions: string[];
+  medications: string[];
+  emergencyContact: string;
+  notes: string;
+  hasFaceOnFile: boolean;
+  registeredAt: string;
+}

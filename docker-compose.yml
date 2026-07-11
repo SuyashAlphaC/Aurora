@@ -16,12 +16,11 @@ services:
     ports:
       - "8000:8000"
     env_file:
-      - ./services/api/.env
+      - ./services/api/.env.docker
     environment:
       AI_SERVICE_URL: http://ai:8001
       AI_SERVICE_MOCK: "false"
       DB_PATH: /app/data/aurora.db
-      AUTH_DISABLED: "false"
     volumes:
       - api-data:/app/data
     depends_on:
@@ -29,7 +28,11 @@ services:
         condition: service_healthy
 
   dashboard:
-    build: ./apps/dashboard
+    build:
+      context: ./apps/dashboard
+      args:
+        VITE_API_URL: http://localhost:8000
+        VITE_WS_URL: ws://localhost:8000/ws/live
     ports:
       - "8080:80"
     depends_on:

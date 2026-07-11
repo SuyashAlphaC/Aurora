@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import { useClock } from "../hooks/useClock";
 import { AlertFeed } from "./AlertFeed";
 import { CrisisBanner } from "./CrisisBanner";
+import { MedicalIdentityPanel } from "./MedicalIdentityPanel";
 import { SystemStatus } from "./SystemStatus";
 import { ReroutePanel } from "./ReroutePanel";
 import { ShelterCard } from "./ShelterCard";
@@ -17,6 +18,7 @@ export function Dashboard() {
     useLiveData(token);
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
   const [acceptBusy, setAcceptBusy] = useState(false);
+  const [medicalOpen, setMedicalOpen] = useState(false);
 
   const openCritical = useMemo(
     () => alerts.find((a) => a.status === "OPEN" && a.severity === "CRITICAL") ?? null,
@@ -79,6 +81,9 @@ export function Dashboard() {
             <span className="feed-mode">{useMock ? "MOCK" : "API"}</span>
             {lastEvent && <span className="last-event mono">▸ {lastEvent}</span>}
           </div>
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setMedicalOpen(true)}>
+            MEDICAL ID
+          </button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={logout}>
             DISCONNECT
           </button>
@@ -174,6 +179,8 @@ export function Dashboard() {
       <footer className="command-footer mono">
         AURORA EOC · CISCO MERAKI · WEBEX · DUO · LIGHT THROUGH THE STORM
       </footer>
+
+      {medicalOpen && <MedicalIdentityPanel onClose={() => setMedicalOpen(false)} />}
     </div>
   );
 }
