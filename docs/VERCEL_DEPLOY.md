@@ -58,7 +58,9 @@ Click **Deploy**. Your dashboard will be at `https://<project>.vercel.app`.
 ### 5. Verify
 
 - Open the Vercel URL → login page loads.
-- If API is not deployed yet, login will fail — deploy Part 2 first.
+- Status should show **SECURE CHANNEL READY · DUO MFA REQUIRED** when the API is reachable and Duo is configured.
+- If you see **API UNREACHABLE (http://localhost:8000)** — `VITE_API_URL` was not set at build time; add env vars and **redeploy**.
+- If you see **DUO NOT CONFIGURED ON API** — the API is up but missing `DUO_*` in the API host's environment (not Vercel).
 
 ---
 
@@ -161,7 +163,8 @@ vercel --prod
 
 | Symptom | Fix |
 |---------|-----|
-| Login works locally, fails on Vercel | `VITE_API_URL` wrong or API not HTTPS-accessible |
+| **DUO NOT CONFIGURED** or **API UNREACHABLE (http://localhost:8000)** | `VITE_API_URL` not set on Vercel — add env vars and **redeploy** |
+| Login works locally, fails on Vercel | `VITE_API_URL` must be your **public** API URL (Railway/Render), not localhost |
 | Dashboard loads but map never updates | WebSocket blocked — use `wss://` not `ws://`; API must support WS |
 | CORS errors | API already uses `cors()` — ensure API URL matches exactly |
 | Face scan models 404 | Run `npm install` in dashboard so `postinstall` copies models to `public/models/` |

@@ -1,6 +1,6 @@
 # Aurora — Architecture Diagrams
 
-Concise architecture illustrations for GitHub submission (2–4 diagrams). Render in GitHub, VS Code (Mermaid), or [mermaid.live](https://mermaid.live).
+Concise architecture illustrations for Aurora. 
 
 ---
 

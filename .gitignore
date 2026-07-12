@@ -36,3 +36,5 @@ npm-debug.log*
 *.db
 *.sqlite
 services/api/data/
+.vercel
+.env*.local

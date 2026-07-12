@@ -1,0 +1,48 @@
+# Aurora backend on EC2 — API + AI + Caddy (HTTPS via sslip.io). No dashboard.
+services:
+  ai:
+    build: ./services/ai
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/ai/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  api:
+    build: ./services/api
+    restart: unless-stopped
+    env_file:
+      - ./services/api/.env
+    environment:
+      PORT: "8000"
+      AI_SERVICE_URL: http://ai:8001
+      AI_SERVICE_MOCK: "false"
+      DB_PATH: /app/data/aurora.db
+      AUTH_DISABLED: "false"
+    volumes:
+      - aurora-data:/app/data
+    depends_on:
+      ai:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      AURORA_PUBLIC_HOST: ${AURORA_PUBLIC_HOST}
+    volumes:
+      - ./infra/ec2/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
+volumes:
+  aurora-data:
+  caddy-data:
+  caddy-config:

@@ -51,7 +51,7 @@ This ADR documents the **major architectural decisions** made during Aurora. It 
 
 **Context:** Not every hackathon team has Meraki hardware, Spaces licenses, or Splunk tenants on day one.
 
-**Decision:** Implement **real** Cisco clients for Duo, Webex, Meraki Dashboard API, and ThousandEyes health probes. Feed **simulated telemetry** (`demo-golden-path.sh`, sensor simulator) when field devices are absent. Document honestly in `SUBMISSION.md` and pitch.
+**Decision:** Implement **real** Cisco clients for Duo, Webex, Meraki Dashboard API, and ThousandEyes health probes. Feed **simulated telemetry** (`demo-golden-path.sh`, sensor simulator) when field devices are absent. Document honestly in `README.md` and `docs/PROJECT.md`.
 
 **Consequences:** Judges can verify live Cisco calls via `/api/health` and Webex cards while still seeing a compelling crisis narrative. Meraki uses regional base URL (`api.meraki.in`) with uplink endpoint fallback for India orgs.
 
@@ -93,9 +93,21 @@ This ADR documents the **major architectural decisions** made during Aurora. It 
 
 **Context:** FAQ requires README, ADR, architecture diagrams, and demo code (HTML/JS acceptable).
 
-**Decision:** Monorepo at repo root; `docs/ADR.md`, `docs/architecture/DIAGRAMS.md`, and `docs/demo/animated-demo.html` (+ `DEMO_VIDEO_SCRIPT.md`) satisfy documentation and mock UX requirements alongside the functional React dashboard.
+**Decision:** Monorepo at repo root; `docs/ADR.md`, `docs/architecture/DIAGRAMS.md`, and the functional React dashboard satisfy documentation requirements. Demo video and pitch deck are prepared outside the repo.
 
 **Consequences:** Reviewers have one private GitHub repo with both runnable PoC and recordable 5-minute animated pitch.
+
+---
+
+## 9. Deferred Cisco Spaces and Splunk integrations
+
+**Context:** The challenge architecture names **Cisco Spaces** (Sense) and **Splunk** (Observe). Implementing them requires tenant infrastructure we did not have: a **Cisco Spaces license/tenant** with location zones on Meraki/Catalyst, and a **Splunk Cloud** (or Enterprise) deployment with **HEC** enabled.
+
+**Decision:** **Do not implement mock clients.** Document deferral honestly in README and PROJECT.md §6.4. Substitute Spaces with the **telemetry simulator** feeding `processTelemetry()`; substitute Splunk with the in-app **rules engine** (`engine/state.ts`). Preserve clear **wiring plans** so production teams know exactly where to plug in when tenants exist.
+
+**Consequences:** Submission stays technically credible (real Duo/Webex/Meraki/TE where configured). Spaces and Splunk remain roadmap with concrete file-level integration points (`cisco/spaces.ts`, `observe/splunkHec.ts`, poller/webhook + HEC hooks). No false `/api/health` flags for services we cannot call.
+
+**Alternatives rejected:** Hard-coded fake Spaces/Splunk responses (misleading to judges); blocking the PoC on enterprise procurement (would prevent demo).
 
 ---
 
@@ -108,5 +120,5 @@ This ADR documents the **major architectural decisions** made during Aurora. It 
 | AI | Python FastAPI, explainable outputs |
 | Auth | Duo Auth API, server-issued session token |
 | Real-time | WebSocket broadcast from state engine |
-| Cisco | Real Duo/Webex/Meraki/TE; simulated field telemetry when needed |
-| Demo | Live golden path + HTML animated showcase |
+| Cisco | Real Duo/Webex/Meraki/TE; simulated field telemetry when needed; Spaces/Splunk deferred (no tenant) |
+| Demo | Live golden path via simulator + dashboard |

@@ -1,8 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
-import { ApiError, apiFetch } from "../api/client";
+import { ApiError, apiFetch, getApiUrl } from "../api/client";
 import { useAuth } from "./AuthContext";
 
-type AuthHealth = "loading" | "duo" | "dev" | "disabled";
+type AuthHealth = "loading" | "duo" | "dev" | "disabled" | "unreachable";
 
 export function LoginPage() {
   const { login, verifyPasscode } = useAuth();
@@ -20,7 +20,7 @@ export function LoginPage() {
         else if (h.auth === "disabled") setAuthHealth("disabled");
         else setAuthHealth("dev");
       })
-      .catch(() => setAuthHealth("dev"));
+      .catch(() => setAuthHealth("unreachable"));
   }, []);
 
   async function handleSubmit(e: FormEvent) {
@@ -94,10 +94,12 @@ export function LoginPage() {
 
         <div className={`bunker-status mono ${authHealth === "duo" ? "" : "bunker-status-warn"}`}>
           <span className={`status-led ${authHealth === "duo" ? "" : "status-led-warn"}`} />
-          {authHealth === "loading" && "CHECKING DUO STATUS…"}
+          {authHealth === "loading" && "CHECKING API & DUO STATUS…"}
           {authHealth === "duo" && "SECURE CHANNEL READY · DUO MFA REQUIRED"}
           {authHealth === "disabled" && "AUTH DISABLED · DEV MODE ONLY"}
-          {authHealth === "dev" && "DUO NOT CONFIGURED · ADD services/api/.env · PUSH DISABLED"}
+          {authHealth === "dev" && "DUO NOT CONFIGURED ON API · PUSH DISABLED"}
+          {authHealth === "unreachable" &&
+            `API UNREACHABLE (${getApiUrl()}) · DEPLOY services/api + SET VITE_API_URL ON VERCEL`}
         </div>
 
         <form onSubmit={handleSubmit} className="bunker-form">

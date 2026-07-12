@@ -13,7 +13,9 @@ When a flood, cyclone, or earthquake strikes, the difference between life and de
 
 **Aurora** is a Cisco-powered command center that gives disaster coordinators a **single live picture** of every shelter in an affected zone: how full it is, whether its environment is safe, whether its network is up — and it **acts automatically**, sending Webex alerts and rerouting incoming people to the nearest safe shelter with capacity, *before* a shelter is dangerously overcrowded.
 
-It is built as a **demo-complete vertical slice** on Cisco's connectivity, sensing, observability, engagement, and security stack, with an explainable AI layer for capacity forecasting and reroute recommendations.
+It is built as a **demo-complete vertical slice**: all three application services are connected end-to-end in code (dashboard → API → AI → WebSocket). Cisco client libraries are implemented and callable when credentials are set; **field occupancy/environment for the live demo is driven by a telemetry simulator**, not production Meraki sensors at every shelter.
+
+**Live demo:** https://aurora-csr.vercel.app (dashboard on Vercel; API + AI on AWS EC2 with Duo, Webex, and Meraki configured). See [§8 Live deployment](#8-live-deployment).
 
 ---
 
@@ -100,9 +102,14 @@ Aurora is a **real-time command center** with four working parts:
 - **Automated Webex alerts** — critical events posted to a coordinator space with Adaptive Cards + acknowledge buttons.
 - **Network-health watch** — shelters whose uplink degrades are flagged before they go dark.
 - **Secure access** — Duo MFA in front of the coordinator dashboard.
+- **Evacuee Medical ID** — pre-disaster health registry for shelter intake when family is absent:
+  - **ID lookup** — coordinator enters evacuee ID or scans QR wristband (`AUR-1001`–`AUR-1004` pre-seeded); API returns blood group, allergies, conditions, medications, emergency contacts.
+  - **Face scan** — browser-side `@vladmandic/face-api` captures a 128-dim face embedding; `POST /api/medical/identify` matches against enrolled profiles (Euclidean distance, audit-logged). Requires prior enrollment via the **Register** tab at intake.
+  - **Duo-gated** — all `/api/medical/*` routes require coordinator Bearer token; access written to `medical_access_log`.
+  - **Production posture** — consent at pre-registration; ID/QR remains primary fallback; face scan is a supplement. Full detail: [MEDICAL_IDENTITY.md](MEDICAL_IDENTITY.md).
 
 ### 5.3 The golden-path demo scenario
-> A surge of evacuees arrives at **Shelter B**. The occupancy sensor climbs; the AI forecasts it will exceed capacity in ~18 minutes and air quality begins to degrade. Aurora flips Shelter B to **CRITICAL**, fires a **Webex alert** to the coordinator space, and recommends rerouting intake to **Shelter D** (nearest with room and safe air). The coordinator taps *Accept* on the Webex Adaptive Card; the map updates the intake routing. Moments later a **network uplink** at Shelter A degrades — ThousandEyes/Meraki data flags it and Aurora pages the NOC team, all in seconds.
+> A surge of evacuees arrives at **Shelter B**. The **telemetry simulator** (or `demo-golden-path.sh`) drives occupancy and AQI upward. The AI service forecasts a capacity breach; the state engine flips Shelter B to **CRITICAL** and pushes a **Webex Adaptive Card** to the coordinator space. The coordinator logs in via **Duo MFA** at https://aurora-csr.vercel.app, reviews the tactical map, and clicks **AUTHORIZE REROUTE** on the dashboard (primary path). The map and incident feed update live over WebSocket. Optionally, the coordinator can accept reroute from the Webex card if a webhook is configured. **Medical ID** → **ID LOOKUP** → `AUR-1001` (or **FACE SCAN** after enrollment) demonstrates hospital handoff when family is absent.
 
 ---
 
@@ -113,13 +120,13 @@ Aurora maps directly onto Cisco's **Connect → Sense → Observe → Engage →
 ### 6.1 Technology-by-technology
 
 #### 🔗 Connect — **Cisco Meraki (Dashboard API)**
-- **Role in Aurora:** Each shelter is modeled as a Meraki *network/site*. We pull real device and uplink status from the **Meraki Dashboard API** (via the always-on Cisco DevNet sandbox) to know whether a shelter's connectivity backbone is healthy.
-- **How it functions:** Backend polls `GET /organizations/{id}/devices/statuses` and uplink endpoints on an interval; results feed the shelter's `network` health field and drive the map color and outage alerts.
-- **Why Meraki over alternatives:** Meraki is *cloud-managed*, so its entire state is available through a clean REST API with **no on-prem controller** — ideal for a disaster where local infrastructure is compromised and everything must be managed centrally. Alternatives (raw SNMP polling, on-prem Catalyst-only management, or a generic MQTT broker) would require infrastructure that doesn't survive a disaster and lack a unified cloud API. Meraki also natively hosts the environmental sensors we need (see Sense), giving one vendor API for both connectivity *and* sensing.
+- **Role in Aurora:** Each shelter is mapped to a Meraki network. The API polls the **Meraki Dashboard API** for organization connectivity and uplink status.
+- **How it functions:** `meraki.ts` + background poller call uplink endpoints (with India-region fallback); results merge with ingested telemetry in the state engine.
+- **PoC status:** **Live API integration** when `MERAKI_API_KEY` and `MERAKI_ORG_ID` are set (e.g. `api.meraki.in`). Uplink telemetry requires claimed MX devices; demo crisis narrative uses the **simulator** for occupancy/AQI.
 
 #### 📡 Sense — **Cisco Spaces + Meraki MT/MV Sensors**
 - **Role in Aurora:** Provides the ground-truth signals — **occupancy** (Meraki MV camera people-counting / Cisco Spaces location density) and **environment** (Meraki MT sensors: temperature, humidity, air quality, water-leak).
-- **How it functions:** Sensor readings arrive via the Meraki sensor API / Cisco Spaces; in the PoC a **sensor simulator** produces realistically-shaped data (and pulls live values from the Meraki sandbox where available) into our ingestion endpoint. These readings set each shelter's `occupancy` and `environment` state.
+- **How it functions:** In production, readings would arrive via Meraki sensor API / Cisco Spaces. In this PoC, a **Python simulator** and `POST /api/telemetry` feed realistically shaped occupancy and environment data into the ingestion pipeline.
 - **Why Cisco Spaces + Meraki sensors over alternatives:** They reuse the *same network the shelter already runs on* — no separate IoT gateway, no extra SIM/LoRa network to deploy in a crisis. Cisco Spaces turns existing Wi-Fi/cameras into an occupancy sensor without new hardware per person. A generic IoT stack (custom ESP32 + MQTT) would be cheaper per node but is not deployable at disaster speed and gives no unified, secured cloud API. Using Cisco's sensing keeps Sense, Connect, and Secure under one governed umbrella.
 
 #### 👁 Observe — **Cisco ThousandEyes + Splunk**
@@ -134,7 +141,7 @@ Aurora maps directly onto Cisco's **Connect → Sense → Observe → Engage →
 
 #### 🔒 Secure — **Cisco Duo (+ Secure Access / Umbrella narrative)**
 - **Role in Aurora:** Protects the coordinator console — only verified responders can view sensitive shelter/occupant data or issue reroutes. **Umbrella** (DNS-layer) and **Secure Access** frame the broader zero-trust posture for field teams.
-- **How it functions:** The dashboard login is gated by **Duo MFA** (free tier, real integration) via Duo's Web SDK / OIDC; unauthenticated users can't reach the live data or action APIs.
+- **How it functions:** The dashboard login calls **`POST /api/auth/login`**; the API verifies push or passcode via the **Duo Auth API** (server-side, `duo.ts`) and issues a session token used as Bearer on REST and WebSocket. Unauthenticated users cannot reach protected routes.
 - **Why Duo over alternatives:** Duo delivers **real MFA in minutes with a generous free tier** and clean web integration — proving the "Secure" layer *for real* rather than as a mention. Rolling our own auth (bcrypt + JWT only) provides no second factor and no device-trust story; a generic OAuth provider (Auth0) isn't part of the Cisco backbone the challenge rewards. Duo also composes naturally with Webex identity, giving a coherent Cisco security story end-to-end.
 
 #### 🧠 Add Intelligence — **Explainable AI layer**
@@ -146,14 +153,103 @@ Aurora maps directly onto Cisco's **Connect → Sense → Observe → Engage →
 
 ### 6.2 Layer → technology → function summary
 
-| Layer | Cisco technology | Function in Aurora | Real vs. simulated in PoC |
+| Layer | Cisco technology | Function in Aurora | Integration status (current build) |
 |---|---|---|---|
-| **Connect** | Meraki Dashboard API | Shelter site/uplink connectivity status | **Real** (DevNet sandbox) |
-| **Sense** | Cisco Spaces + Meraki MT/MV | Occupancy + environment (air/temp/water) | Real where sandbox allows + **simulator** |
-| **Observe** | ThousandEyes + Splunk | Path/reliability monitoring, anomaly detection, alerting | **Real** TE (sandbox/trial) + rules engine for Splunk |
-| **Engage** | Webex (Bot/Messages/Adaptive Cards) | Push alerts, reroute cards, coordination | **Real** (free dev account) |
-| **Secure** | Duo (+ Umbrella/Secure Access) | MFA-gated coordinator console; zero-trust framing | **Real** Duo (free tier) |
-| **Intelligence** | Explainable AI (forecast + scoring) | Predict capacity, recommend reroute with reasons | **Real** (synthetic training data) |
+| **Connect** | Meraki Dashboard API | Shelter network mapping + uplink polling | **Live API** when configured; uplinks empty without MX hardware |
+| **Sense** | Meraki MT/MV + Cisco Spaces (roadmap) | Occupancy + environment | **Simulator** + `/api/telemetry` for demo |
+| **Observe** | ThousandEyes + rules engine | Path probe + threshold correlation | TE **health probe**; rules engine **live** in `state.ts` (not Splunk SIEM) |
+| **Engage** | Webex Bot + Adaptive Cards | CRITICAL alerts + optional card actions | **Live** when `WEBEX_*` set |
+| **Secure** | Duo Auth API | MFA-gated console + medical APIs | **Live** when `DUO_*` set |
+| **Intelligence** | Explainable AI (FastAPI) | Forecast + reroute scoring | **Live** Python service on :8001 |
+
+### 6.3 Application integration status
+
+All internal services are **connected in the running PoC** — this is not a mock UI-only submission.
+
+| Link | Status | How to verify |
+|------|--------|---------------|
+| Dashboard → API (REST) | ✅ Wired | Login, shelters, reroute, medical routes |
+| Dashboard → API (WebSocket) | ✅ Wired | Map/cards update without refresh |
+| API → AI service (:8001) | ✅ Wired | `/api/health` → `"ai": "connected"` |
+| API → Duo | ✅ When configured | `/api/health` → `"auth": "duo"` |
+| API → Webex | ✅ When configured | CRITICAL event posts Adaptive Card |
+| API → Meraki | ✅ When configured | `/api/health` → `cisco.meraki: true` |
+| Simulator → API | ✅ Wired | `demo-golden-path.sh` or `run_golden_path.py` |
+| Cisco Spaces | ❌ Not implemented | No tenant/license — wiring in §6.4 |
+| Splunk export | ❌ Not implemented | No Splunk Cloud — HEC wiring in §6.4 |
+
+**Honest framing for judges:** Aurora proves a **working vertical slice** with real Cisco API clients (Duo, Webex, Meraki) and a **deterministic simulator** for field telemetry — not a fully deployed sensor network at every shelter.
+
+### 6.4 Deferred integrations: Cisco Spaces & Splunk
+
+Two Observe/Sense technologies appear in our architecture diagrams and Cisco narrative but are **intentionally not coded** in this PoC.
+
+#### Why they are not implemented
+
+| Technology | Blocker | PoC substitute |
+|------------|---------|------------------|
+| **Cisco Spaces** | No **Spaces tenant or license** available to the team; Spaces requires partner-enabled Meraki/Catalyst deployment and configured location zones — beyond our Meraki Dashboard API (Connect) access. | Telemetry **simulator** + `POST /api/telemetry` |
+| **Splunk** | No **Splunk Cloud** or Enterprise instance with **HTTP Event Collector (HEC)** provisioned for this project. | In-process **rules engine** (`engine/state.ts`, `services/telemetry.ts`) |
+
+We chose not to ship stub/mock clients that pretend to call these APIs. Judges can verify real integrations via `/api/health` (Duo, Meraki, Webex) while understanding exactly what is deferred and why.
+
+#### How Cisco Spaces would wire in
+
+Spaces is the **Sense** layer source for **occupancy and location density** (Wi-Fi/camera-derived counts at each shelter zone).
+
+```
+Cisco Spaces API / Firehose
+        │
+        ▼
+  spacesPoller.ts  (or POST /api/webhooks/spaces)
+        │  map zoneId → shelterId
+        ▼
+  processTelemetry()  ← existing pipeline
+        │
+        ├──► SQLite (telemetry table)
+        ├──► state engine → HEALTHY | WARNING | CRITICAL
+        └──► WebSocket + Webex (unchanged)
+```
+
+**Implementation checklist (when a tenant exists):**
+
+1. **`services/api/src/cisco/spaces.ts`** — authenticate (OAuth/API key per Spaces docs); fetch location analytics or subscribe to notifications.
+2. **Shelter mapping** — extend shelter config with `spacesZoneId` (alongside `merakiNetworkId`).
+3. **Poller or webhook** — `jobs/spacesPoller.ts` on an interval, or push endpoint for Firehose events.
+4. **Normalize to `TelemetryInput`** — occupancy count → `occupancy` / `capacity`; optional presence density for trend features.
+5. **No dashboard changes** — map, cards, and AI forecast already consume unified shelter telemetry.
+
+#### How Splunk would wire in
+
+Splunk is the **Observe** layer **system of record** for correlation, search, and compliance — complementing Aurora’s real-time WebSocket path.
+
+```
+telemetry ingest / state change / alert / reroute / audit
+        │
+        ▼
+  splunkHec.ts  →  POST /services/collector/event
+        │
+        ▼
+  Splunk Cloud (index: aurora)
+        │
+        ├──► SPL correlation searches (multi-signal alerts)
+        ├──► Dashboards for NGO / government ops leads
+        └──► Optional: modular alert → Webex
+```
+
+**Implementation checklist (when Splunk Cloud exists):**
+
+1. **Env vars** — `SPLUNK_HEC_URL`, `SPLUNK_HEC_TOKEN`, `SPLUNK_INDEX=aurora`.
+2. **`services/api/src/observe/splunkHec.ts`** — fire-and-forget HEC posts with structured JSON (`sourcetype`, `event`, `fields`).
+3. **Hook points (already centralized):**
+   - `insertTelemetry()` — every sensor reading
+   - `maybeCreateCriticalAlert()` — CRITICAL events with reroute metadata
+   - `acceptReroute()` — coordinator action audit
+   - `logMedicalAccess()` — optional PHI-adjacent audit stream (separate index in production)
+4. **Splunk SPL** — replace or duplicate rules in `computeShelterState()` as scheduled/real-time searches across `aurora:telemetry`.
+5. **Division of labour** — keep Aurora rules engine for **sub-second** WebSocket + Webex; Splunk for **cross-shelter analytics**, historical replay, and regulatory audit.
+
+See also [docs/ADR.md §9](ADR.md#9-deferred-cisco-spaces-and-splunk-integrations).
 
 ---
 
@@ -178,7 +274,7 @@ flowchart TB
         DUO["🔒 Duo<br/>(Secure: MFA)"]
     end
 
-    subgraph BACKEND["⚙️ SHELTERMESH BACKEND"]
+    subgraph BACKEND["⚙️ AURORA API (Node :8000)"]
         ING["Ingestion Service<br/>/api/telemetry"]
         STATE["State Engine<br/>HEALTHY→WARNING→CRITICAL"]
         ANOM["Anomaly / Rules Engine<br/>(Splunk-style correlation)"]
@@ -231,7 +327,7 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     autonumber
-    participant SEN as 📡 Sensor/Meraki (Shelter B)
+    participant SEN as 📡 Simulator / telemetry
     participant ING as ⚙️ Ingestion
     participant ST as State Engine
     participant AN as Anomaly Engine
@@ -246,12 +342,11 @@ sequenceDiagram
     ST->>AN: evaluate thresholds/trends
     AN->>AI: occupancy trend + inflow rate
     AI-->>AN: "capacity in ~18 min; reroute → Shelter D"
-    AN->>WX: CRITICAL alert + Adaptive Card (Accept/Dismiss)
-    WX-->>CO: coordinator sees card in Webex space
-    CO->>WX: taps "Accept reroute"
-    WX->>ING: webhook: reroute accepted
-    ING->>MAP: intake now routed to Shelter D
-    Note over MAP,CO: Decision time < 30s vs ~15 min manual
+    AN->>WX: CRITICAL alert + Adaptive Card
+    WX-->>CO: notification in Webex space
+    CO->>MAP: AUTHORIZE REROUTE (primary)
+    ING->>MAP: WebSocket — reroute active
+    Note over MAP,CO: Optional: Accept on Webex card via webhook
 ```
 
 ### 7.3 Shelter state model
@@ -279,13 +374,74 @@ RerouteRec     { fromShelterId, toShelterId, score, reasons[], etaMin }
 User           { id, name, role, duoVerified }
 ```
 
-### 7.5 Proposed tech stack (for the build phase)
-| Concern | Choice | Rationale |
+### 7.5 Tech stack (implemented)
+
+| Concern | Choice | Location |
 |---|---|---|
-| Frontend | **React + Vite + Tailwind**, map via Leaflet/Mapbox | fast, demo-polished, live map out of the box |
-| Realtime | **WebSocket (Socket.IO)** or SSE | live map/alerts without refresh |
-| Backend | **Node.js + Express** (or FastAPI if team prefers Python) | quickest path to Webex/Meraki/Duo SDKs |
-| Data | **SQLite/Postgres** + in-memory cache | lightweight, enough for PoC |
-| AI | Python microservice **or** JS heuristic module | explainable forecast + weighted scoring |
-| Cisco SDKs | Meraki Dashboard API, Webex SDK, Duo Web SDK, ThousandEyes API | the real integrations |
-| Simulator | small Node/Python script | drives the live demo deterministically |
+| Frontend | **React 18 + TypeScript + Vite**, Leaflet map, custom CSS, `@vladmandic/face-api` | `apps/dashboard` |
+| Realtime | **Native WebSocket** (`ws`) — `/ws/live` | `services/api/src/ws/` |
+| API | **Node.js 20 + Express**, better-sqlite3 | `services/api` |
+| AI | **Python 3.12 + FastAPI**, pytest | `services/ai` |
+| Data | **SQLite** (shelters, telemetry, events, medical) | `services/api/src/db/` |
+| Cisco clients | Meraki REST, Webex Messages API, Duo Auth API, ThousandEyes probe | `services/api/src/cisco/` |
+| Demo driver | Python simulator + `scripts/demo-golden-path.sh` | `services/ai/simulator/`, `scripts/` |
+| Container | Docker Compose (API + AI + nginx dashboard) | `docker-compose.yml` |
+
+**Not in this build:** Tailwind, Socket.IO, Postgres, Cisco Spaces API, Splunk SIEM export, Umbrella/Secure Access (narrative only).
+
+---
+
+## 8. Live deployment
+
+Aurora is **deployed and reachable** for hackathon review — not localhost-only.
+
+### 8.1 Architecture
+
+```
+┌─────────────────────────┐     HTTPS / WSS      ┌──────────────────────────────────┐
+│  Vercel                 │ ───────────────────► │  AWS EC2 (us-east-1)             │
+│  aurora-csr.vercel.app  │                      │  Docker: API :8000 + AI :8001    │
+│  React dashboard        │                      │  Caddy → Let's Encrypt (sslip.io)│
+└─────────────────────────┘                      └──────────────────────────────────┘
+```
+
+| Endpoint | URL |
+|----------|-----|
+| **Dashboard (primary)** | https://aurora-csr.vercel.app |
+| **API base** | https://52-86-46-38.sslip.io |
+| **WebSocket** | `wss://52-86-46-38.sslip.io/ws/live` |
+| **Health check** | https://52-86-46-38.sslip.io/api/health |
+
+Vercel env (baked at build): `VITE_API_URL`, `VITE_WS_URL` → EC2 HTTPS host. Backend env (EC2): Duo, Webex, Meraki from `services/api/.env`.
+
+### 8.2 Production integration status
+
+Verified against the cloud API (`/api/health`):
+
+| Integration | Cloud status | Notes |
+|-------------|--------------|-------|
+| Duo MFA | ✅ Live | `"auth": "duo"` |
+| Webex | ✅ Configured | Adaptive Cards on CRITICAL |
+| Meraki Dashboard API | ✅ Live | Org + shelter networks mapped |
+| AI service | ✅ Connected | FastAPI on same EC2 host |
+| WebSocket | ✅ Live | Map/cards/feed push |
+| Field telemetry | 🟡 Simulator | `demo-golden-path.sh` → cloud API |
+| Medical ID | ✅ Live | ID lookup + face scan on deployed dashboard |
+
+### 8.3 Demo walkthrough (cloud)
+
+1. Open https://aurora-csr.vercel.app → Duo login as coordinator.
+2. Confirm login status: *SECURE CHANNEL READY · DUO MFA REQUIRED*.
+3. Run `./scripts/demo-golden-path.sh` locally (targets EC2 if `API_URL` set) or use **SIMULATE CRISIS** if exposed — Shelter B → CRITICAL → reroute.
+4. Click **MEDICAL ID** → **ID LOOKUP** → `AUR-1001` (Priya Sharma — allergies highlighted).
+5. Optional: **REGISTER** → capture face for `AUR-1001` → **FACE SCAN** → **CAPTURE & IDENTIFY**.
+
+### 8.4 Ops scripts
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/provision-ec2-backend.sh` | One-time EC2 + Elastic IP + security group |
+| `scripts/deploy-ec2-backend.sh` | Sync repo + rebuild Docker on EC2 |
+| `scripts/configure-vercel-backend.sh` | Set Vercel env vars + production redeploy |
+
+Repo: https://github.com/SuyashAlphaC/Aurora · Deploy guide: [VERCEL_DEPLOY.md](VERCEL_DEPLOY.md)
